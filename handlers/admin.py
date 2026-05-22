@@ -31,6 +31,7 @@ def build_admin_panel_markup(total_users: int | str):
     text_analytics = "📊 Аналитика"
     text_bind_insurance = "Задать сообщение: Страховки"
     text_bind_transfer = "Задать сообщение: Инд. трансфер"
+    text_bind_visas = "Задать сообщение: Визы"
 
     return inline_builder_text(
         text=[
@@ -40,6 +41,7 @@ def build_admin_panel_markup(total_users: int | str):
             text_analytics,
             text_bind_insurance,
             text_bind_transfer,
+            text_bind_visas,
         ],
         callback_data=[
             "any",
@@ -48,8 +50,9 @@ def build_admin_panel_markup(total_users: int | str):
             "analytics_main",
             "bind_insurance_content",
             "bind_transfer_content",
+            "bind_visas_content",
         ],
-        sizes=[1, 1, 2, 1, 1],
+        sizes=[1, 1, 2, 1, 1, 1],
     )
 
 
@@ -185,6 +188,23 @@ async def process_callback_bind_transfer_content(callback: CallbackQuery, state:
     await state.set_state(BindMenuContent.transfer_message)
 
 
+@router.callback_query(
+    F.data == "bind_visas_content", IsAdmin(ADMIN_IDS), StateFilter(default_state)
+)
+async def process_callback_bind_visas_content(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await callback.message.answer(
+        "<b>Привязка кнопки \"Визы\"</b>\n\n"
+        "Перешлите сообщение рекламодателя (лучше именно forward), "
+        "которое нужно показывать пользователю.",
+        reply_markup=inline_builder_text(
+            text="Отменить",
+            callback_data="admin_back",
+        ),
+    )
+    await state.set_state(BindMenuContent.visas_message)
+
+
 @router.message(BindMenuContent.insurance_message, IsAdmin(ADMIN_IDS))
 async def process_bind_insurance_message(message: Message, state: FSMContext):
     if message.has_protected_content:
@@ -228,6 +248,31 @@ async def process_bind_transfer_message(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
         "Сообщение для кнопки <b>Инд. трансфер</b> сохранено.",
+        reply_markup=inline_builder_text(
+            text="Вернуться в админ-панель",
+            callback_data="admin_back",
+        ),
+    )
+
+
+@router.message(BindMenuContent.visas_message, IsAdmin(ADMIN_IDS))
+async def process_bind_visas_message(message: Message, state: FSMContext):
+    if message.has_protected_content:
+        await message.answer(
+            "Это сообщение защищено от копирования.\n\n"
+            "Отправьте, пожалуйста, тот же контент без защиты.",
+            reply_markup=inline_builder_text(
+                text="Отменить",
+                callback_data="admin_back",
+            ),
+        )
+        return
+
+    source_chat_id, source_message_id = resolve_source_message_ids(message)
+    await req.set_menu_content("visas", source_chat_id, source_message_id)
+    await state.clear()
+    await message.answer(
+        "Сообщение для кнопки <b>Визы</b> сохранено.",
         reply_markup=inline_builder_text(
             text="Вернуться в админ-панель",
             callback_data="admin_back",

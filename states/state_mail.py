@@ -26,6 +26,7 @@ class CreateMessage(StatesGroup):
 class BindMenuContent(StatesGroup):
     insurance_message = State()
     transfer_message = State()
+    visas_message = State()
 
 
 @router.message(CreateMessage.theme_text, F.text)

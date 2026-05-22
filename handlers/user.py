@@ -21,7 +21,6 @@ from services.analytics import log_event
 
 router = Router()
 config = load_config()
-MENU_SEPARATOR_TEXT = "\u200b"
 
 
 def build_main_menu(car_numbers: int):
@@ -32,7 +31,7 @@ def build_main_menu(car_numbers: int):
             "Инд. трансфер",
             f"Мои машины ({car_numbers} из 3)",
             "Статистика очереди",
-            MENU_SEPARATOR_TEXT,
+            "Визы",
             "Поддержка",
             "Есть идея",
         ],
@@ -42,7 +41,7 @@ def build_main_menu(car_numbers: int):
             "individual_transfer",
             "my_cars",
             "reg_car_first",
-            "menu_separator",
+            "visas",
             "support_stub",
             "idea_stub",
         ],
@@ -177,6 +176,6 @@ async def process_transfer_button(callback: CallbackQuery):
     await send_bound_content(callback, "individual_transfer")
 
 
-@router.callback_query(F.data == "menu_separator", StateFilter(default_state))
-async def process_menu_separator(callback: CallbackQuery):
-    await callback.answer()
+@router.callback_query(F.data.in_({"visas", "visas_stub"}), StateFilter(default_state))
+async def process_visas_button(callback: CallbackQuery):
+    await send_bound_content(callback, "visas")
